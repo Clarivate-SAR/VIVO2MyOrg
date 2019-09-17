@@ -24,9 +24,10 @@ else:
     from itertools import izip_longest as zipl
 
 
-BATCH_SIZE = 50 # Max number of objects to post to My Org at a time
+BATCH_SIZE = 10 # Max number of objects to post to My Org at a time
 MAX_RETRIES = 10 # The delete all operation takes awhile to complete. How many times to retry before aborting.
-MYORG_API_URL = 'https://api.dev-stable.clarivate.com/api/myorg'
+#MYORG_API_URL = 'https://api.dev-stable.clarivate.com/api/myorg'
+MYORG_API_URL = 'https://api.clarivate.com/api/myorg'
 
 # Define the VIVO store
 try:
@@ -142,7 +143,7 @@ def post_to_myorg(data, datatype):
 def update_to_myorg(data, datatype):
     headers = {'X-ApiKey': MYORG_API_KEY}
     logging.debug(data)
-    r = session.put(MYORG_API_URL + '/' + datatype + '/' + data['organizationId'], json=data, headers=headers)
+    r = session.put(MYORG_API_URL + '/' + datatype + '/' + str(data['organizationId']), json=data, headers=headers)
     logging.debug(r)
     try:
         if (r.status_code not in {201, 204}):
@@ -268,18 +269,22 @@ def sanitize_orgs():
 
     return org_ids
 
+
 def sanitize_ids(ids):
     '''
-    # Create local IDs since MyOrg only supports alphanumberic IDs and
+    # Create local IDs since MyOrg only supports numeric IDs and
     # we can't assume the VIVO URIs follow this
     In: {'URI': {'type': 'uri', 'value': 'http://vivo.nih.gov/individual/kathleen-kelly-siebenlist'}}
-    Out: {'http://vivo.nih.gov/individual/kathleen-kelly-siebenlist': 'kathleenkellysiebenlist'}
+    Out: {'http://vivo.nih.gov/individual/kathleen-kelly-siebenlist': '1'}
     '''
     sanitized_ids = {}
+    i = 1
     for rec in ids:
         key = rec['URI']['value']
-        sanitized_ids[key] = sanitize_id(key)
+        sanitized_ids[key] = i
+        i += 1
     return sanitized_ids
+
 
 def prepare_orgs():
     '''
@@ -439,7 +444,7 @@ if __name__ == "__main__":
         logging.info("Posting people batch {}".format(idx))
         logging.debug("Batch: {}".format(batch))
         post_to_myorg(batch, 'persons')
-        time.sleep(1)
+        time.sleep(0.25)
 
 
     # Add pubs
@@ -450,4 +455,4 @@ if __name__ == "__main__":
         logging.info("Posting pubs batch {}".format(idx))
         logging.debug("Batch: {}".format(batch))
         post_to_myorg(batch, 'publications')
-        time.sleep(2)
+        time.sleep(0.25)
